@@ -15,7 +15,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class NotifierConfigurationRequest {
     
     @NotBlank(message = "Notifier name is required")

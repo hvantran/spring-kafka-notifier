@@ -1,5 +1,6 @@
 package hoatv.kafka.notifier.service;
 
+import hoatv.kafka.notifier.model.NotifierConfiguration;
 import hoatv.kafka.notifier.repository.NotifierConfigurationRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class KafkaTopicService {
         try {
             List<String> topics = repository.findByEnabledTrue()
                     .stream()
-                    .map(config -> config.getTopic())
+                    .map(NotifierConfiguration::getTopic)
                     .distinct()
                     .collect(Collectors.toList());
             
@@ -52,7 +53,7 @@ public class KafkaTopicService {
         try {
             return repository.findAll()
                     .stream()
-                    .map(config -> config.getTopic())
+                    .map(NotifierConfiguration::getTopic)
                     .distinct()
                     .collect(Collectors.toList());
                     

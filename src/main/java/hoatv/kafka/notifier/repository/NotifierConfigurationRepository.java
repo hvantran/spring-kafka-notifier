@@ -15,6 +15,8 @@ public interface NotifierConfigurationRepository extends MongoRepository<Notifie
     
     List<NotifierConfiguration> findByEnabledTrue();
     
+    List<NotifierConfiguration> findByEnabledFalse();
+    
     List<NotifierConfiguration> findByTopicAndEnabledTrue(String topic);
     
     List<NotifierConfiguration> findByNotifier(String notifier);

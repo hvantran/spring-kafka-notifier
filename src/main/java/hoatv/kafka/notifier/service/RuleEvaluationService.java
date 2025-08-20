@@ -21,9 +21,7 @@ public class RuleEvaluationService {
     public boolean evaluateRules(Map<String, Object> rules, String message) {
         try {
             LOGGER.debug("Evaluating rules against message: {}", message);
-            
             JsonNode messageNode = objectMapper.readTree(message);
-            
             return evaluateNode(rules, messageNode);
             
         } catch (Exception e) {

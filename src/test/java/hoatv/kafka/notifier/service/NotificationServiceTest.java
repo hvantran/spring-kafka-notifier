@@ -228,7 +228,7 @@ class NotificationServiceTest {
 
         // Then
         verify(slackWebhookClient, never()).sendMessage(any(), any());
-        verify(objectMapper, never()).readTree(any());
+        verify(objectMapper, never()).readTree(any(String.class));
     }
 
     @Test
