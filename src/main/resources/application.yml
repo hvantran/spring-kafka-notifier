@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: spring-kafka-notifier
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/kafka-notifier
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: kafka-notifier-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    hoatv.kafka.notifier: DEBUG
+    org.springframework.kafka: INFO
