@@ -16,7 +16,7 @@
     <description>REST API application for dynamic Kafka message processing and Slack notifications</description>
 
     <properties>
-        <application.startup.class>hoatv.kafka.notifier.SpringKafkaNotifierApplication</application.startup.class>
+        <application.startup.class>com.hoatv.kafka.notifier.SpringKafkaNotifierApplication</application.startup.class>
     </properties>
     <dependencies>
         <dependency>
@@ -106,6 +106,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
