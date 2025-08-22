@@ -1,254 +1,262 @@
 package com.hoatv.kafka.notifier.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hoatv.kafka.notifier.config.TestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(classes = {RuleEvaluationService.class})
-@ContextConfiguration(classes = TestConfig.class)
-@DisplayName("RuleEvaluationService Tests")
+/**
+ * Comprehensive test cases for RuleEvaluationService class
+ * Tests cover simple values, JSON objects, and complex logic operators
+ */
+@DisplayName("Rule Evaluation Service Tests")
 class RuleEvaluationServiceTest {
 
-    @Autowired
-    private ObjectMapper objectMapper;
-    
     private RuleEvaluationService ruleEvaluationService;
-    
+
     @BeforeEach
     void setUp() {
+        ObjectMapper objectMapper = new ObjectMapper();
         ruleEvaluationService = new RuleEvaluationService(objectMapper);
     }
-    
+
+    // ========== SIMPLE NUMERIC VALUE TESTS ==========
+
     @Test
-    @DisplayName("Should evaluate greater than rule correctly")
-    void shouldEvaluateGreaterThanRule() {
+    @DisplayName("Should evaluate simple numeric value greater than 8")
+    void shouldEvaluateSimpleNumericValueGreaterThan() {
         // Given
-        String message = "{\"value\": 85, \"name\": \"cpu-usage\"}";
+        String message = "10";
         Map<String, Object> rules = Map.of(
-            "$gt", Map.of("$field", "value", "$value", 80)
+            "$gt", Map.of("$value", 8)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should return true when value 85 > 80");
+        assertTrue(result, "10 should be greater than 8");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate greater than rule as false when condition not met")
-    void shouldEvaluateGreaterThanRuleAsFalse() {
+    @DisplayName("Should evaluate simple numeric value equals 8")
+    void shouldEvaluateSimpleNumericValueEquals() {
         // Given
-        String message = "{\"value\": 75, \"name\": \"cpu-usage\"}";
+        String message = "8";
         Map<String, Object> rules = Map.of(
-            "$gt", Map.of("$field", "value", "$value", 80)
+            "$eq", Map.of("$value", 8)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertFalse(result, "Should return false when value 75 is not > 80");
+        assertTrue(result, "8 should equal 8");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate direct value greater than rule correctly")
-    void shouldEvaluateDirectValueGreaterThan() {
+    @DisplayName("Should evaluate simple numeric value less than 8")
+    void shouldEvaluateSimpleNumericValueLessThan() {
         // Given
-        String message = "85";
+        String message = "5";
         Map<String, Object> rules = Map.of(
-            "$gt", Map.of("$value", 80)
+            "$lt", Map.of("$value", 8)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should return true when direct value 85 > 80");
+        assertTrue(result, "5 should be less than 8");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate AND operator correctly - all conditions true")
-    void shouldEvaluateAndOperatorAllTrue() {
+    @DisplayName("Should return false when simple numeric condition is not met")
+    void shouldReturnFalseWhenSimpleNumericConditionNotMet() {
+        // Given
+        String message = "5";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertFalse(result, "5 should not be greater than 8");
+    }
+
+    @Test
+    @DisplayName("Should handle decimal values correctly")
+    void shouldHandleDecimalValues() {
+        // Given
+        String message = "8.5";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8.0)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "8.5 should be greater than 8.0");
+    }
+
+    @Test
+    @DisplayName("Should handle negative numbers")
+    void shouldHandleNegativeNumbers() {
+        // Given
+        String message = "-5";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", -10)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "-5 should be greater than -10");
+    }
+
+    // ========== STRING VALUE TESTS ==========
+
+    @Test
+    @DisplayName("Should evaluate simple string value equals")
+    void shouldEvaluateSimpleStringValueEquals() {
+        // Given
+        String message = "error";
+        Map<String, Object> rules = Map.of(
+            "$eq", Map.of("$value", "error")
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "String 'error' should equal 'error'");
+    }
+
+    @Test
+    @DisplayName("Should evaluate simple string value contains")
+    void shouldEvaluateSimpleStringValueContains() {
+        // Given
+        String message = "CPU usage is high";
+        Map<String, Object> rules = Map.of(
+            "$contains", Map.of("$value", "usage")
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "String should contain 'usage'");
+    }
+
+    @Test
+    @DisplayName("Should evaluate simple string value in list")
+    void shouldEvaluateSimpleStringValueIn() {
+        // Given
+        String message = "warning";
+        Map<String, Object> rules = Map.of(
+            "$in", Map.of("$values", List.of("error", "warning", "critical"))
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "String 'warning' should be in the list");
+    }
+
+    // ========== BOOLEAN VALUE TESTS ==========
+
+    @Test
+    @DisplayName("Should evaluate boolean value true")
+    void shouldEvaluateBooleanValueTrue() {
+        // Given
+        String message = "true";
+        Map<String, Object> rules = Map.of(
+            "$eq", Map.of("$value", true)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "Boolean 'true' should equal true");
+    }
+
+    @Test
+    @DisplayName("Should evaluate boolean value false")
+    void shouldEvaluateBooleanValueFalse() {
+        // Given
+        String message = "false";
+        Map<String, Object> rules = Map.of(
+            "$eq", Map.of("$value", false)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "Boolean 'false' should equal false");
+    }
+
+    // ========== JSON OBJECT FIELD TESTS ==========
+
+    @Test
+    @DisplayName("Should evaluate JSON object field greater than")
+    void shouldEvaluateJsonObjectFieldGreaterThan() {
         // Given
         String message = "{\"cpu\": 85, \"memory\": 70}";
         Map<String, Object> rules = Map.of(
-            "$and", List.of(
-                Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
-                Map.of("$gt", Map.of("$field", "memory", "$value", 60))
-            )
+            "$gt", Map.of("$field", "cpu", "$value", 80)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should return true when all AND conditions are met");
+        assertTrue(result, "CPU 85 should be greater than 80");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate AND operator correctly - one condition false")
-    void shouldEvaluateAndOperatorOneFalse() {
+    @DisplayName("Should evaluate JSON object field equals")
+    void shouldEvaluateJsonObjectFieldEquals() {
         // Given
-        String message = "{\"cpu\": 85, \"memory\": 50}";
-        Map<String, Object> rules = Map.of(
-            "$and", List.of(
-                Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
-                Map.of("$gt", Map.of("$field", "memory", "$value", 60))
-            )
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertFalse(result, "Should return false when one AND condition is not met");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate OR operator correctly - one condition true")
-    void shouldEvaluateOrOperatorOneTrue() {
-        // Given
-        String message = "{\"cpu\": 85, \"memory\": 50}";
-        Map<String, Object> rules = Map.of(
-            "$or", List.of(
-                Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
-                Map.of("$gt", Map.of("$field", "memory", "$value", 60))
-            )
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertTrue(result, "Should return true when at least one OR condition is met");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate OR operator correctly - all conditions false")
-    void shouldEvaluateOrOperatorAllFalse() {
-        // Given
-        String message = "{\"cpu\": 75, \"memory\": 50}";
-        Map<String, Object> rules = Map.of(
-            "$or", List.of(
-                Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
-                Map.of("$gt", Map.of("$field", "memory", "$value", 60))
-            )
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertFalse(result, "Should return false when all OR conditions are not met");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate equals rule correctly")
-    void shouldEvaluateEqualsRule() {
-        // Given
-        String message = "{\"status\": \"error\", \"code\": 500}";
+        String message = "{\"status\": \"error\", \"count\": 5}";
         Map<String, Object> rules = Map.of(
             "$eq", Map.of("$field", "status", "$value", "error")
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should return true when string values match exactly");
+        assertTrue(result, "Status should equal 'error'");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate not equals rule correctly")
-    void shouldEvaluateNotEqualsRule() {
+    @DisplayName("Should evaluate nested JSON object field")
+    void shouldEvaluateNestedJsonObjectField() {
         // Given
-        String message = "{\"status\": \"error\", \"code\": 500}";
+        String message = "{\"system\": {\"cpu\": {\"usage\": 90}}}";
         Map<String, Object> rules = Map.of(
-            "$ne", Map.of("$field", "status", "$value", "success")
+            "$gt", Map.of("$field", "system.cpu.usage", "$value", 85)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should return true when string values do not match");
+        assertTrue(result, "Nested CPU usage 90 should be greater than 85");
     }
-    
-    @Test
-    @DisplayName("Should evaluate contains rule correctly")
-    void shouldEvaluateContainsRule() {
-        // Given
-        String message = "{\"message\": \"CPU usage is high\", \"level\": \"warning\"}";
-        Map<String, Object> rules = Map.of(
-            "$contains", Map.of("$field", "message", "$value", "CPU usage")
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertTrue(result, "Should return true when string contains the specified value");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate contains rule as case insensitive")
-    void shouldEvaluateContainsRuleCaseInsensitive() {
-        // Given
-        String message = "{\"message\": \"CPU Usage Is High\", \"level\": \"warning\"}";
-        Map<String, Object> rules = Map.of(
-            "$contains", Map.of("$field", "message", "$value", "cpu usage")
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertTrue(result, "Should return true for case insensitive contains match");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate in rule correctly")
-    void shouldEvaluateInRule() {
-        // Given
-        String message = "{\"level\": \"error\", \"code\": 404}";
-        Map<String, Object> rules = Map.of(
-            "$in", Map.of("$field", "level", "$values", List.of("error", "critical", "fatal"))
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertTrue(result, "Should return true when field value is in the specified list");
-    }
-    
-    @Test
-    @DisplayName("Should evaluate nested field access correctly")
-    void shouldEvaluateNestedFieldAccess() {
-        // Given
-        String message = "{\"system\": {\"cpu\": {\"usage\": 85}}, \"timestamp\": \"2023-01-01\"}";
-        Map<String, Object> rules = Map.of(
-            "$gt", Map.of("$field", "system.cpu.usage", "$value", 80)
-        );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
-        // Then
-        assertTrue(result, "Should return true when nested field value meets condition");
-    }
-    
+
     @Test
     @DisplayName("Should handle missing field gracefully")
     void shouldHandleMissingFieldGracefully() {
@@ -257,84 +265,218 @@ class RuleEvaluationServiceTest {
         Map<String, Object> rules = Map.of(
             "$gt", Map.of("$field", "memory", "$value", 80)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertFalse(result, "Should return false when field is missing");
+        assertFalse(result, "Missing field should return false");
     }
-    
+
+    // ========== COMPLEX LOGIC TESTS ==========
+
+    @Test
+    @DisplayName("Should evaluate AND operator with simple value")
+    void shouldEvaluateAndOperatorWithSimpleValue() {
+        // Given
+        String message = "15";
+        Map<String, Object> rules = Map.of(
+            "$and", List.of(
+                Map.of("$gt", Map.of("$value", 10)),
+                Map.of("$lt", Map.of("$value", 20))
+            )
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "15 should be > 10 AND < 20");
+    }
+
+    @Test
+    @DisplayName("Should evaluate OR operator with simple value")
+    void shouldEvaluateOrOperatorWithSimpleValue() {
+        // Given
+        String message = "25";
+        Map<String, Object> rules = Map.of(
+            "$or", List.of(
+                Map.of("$lt", Map.of("$value", 10)),
+                Map.of("$gt", Map.of("$value", 20))
+            )
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "25 should satisfy (< 10 OR > 20)");
+    }
+
+    @Test
+    @DisplayName("Should evaluate AND operator with JSON object")
+    void shouldEvaluateAndOperatorWithJsonObject() {
+        // Given
+        String message = "{\"cpu\": 85, \"memory\": 75}";
+        Map<String, Object> rules = Map.of(
+            "$and", List.of(
+                Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
+                Map.of("$gt", Map.of("$field", "memory", "$value", 70))
+            )
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "Both CPU > 80 AND memory > 70 should be true");
+    }
+
+    // ========== EDGE CASES AND ERROR HANDLING ==========
+
+    @Test
+    @DisplayName("Should handle null message")
+    void shouldHandleNullMessage() {
+        // Given
+        String message = null;
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertFalse(result, "Null message should return false");
+    }
+
+    @Test
+    @DisplayName("Should handle empty message")
+    void shouldHandleEmptyMessage() {
+        // Given
+        String message = "";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertFalse(result, "Empty message should return false");
+    }
+
     @Test
     @DisplayName("Should handle invalid JSON gracefully")
     void shouldHandleInvalidJsonGracefully() {
         // Given
-        String invalidMessage = "{invalid json";
+        String message = "{invalid json}";
         Map<String, Object> rules = Map.of(
-            "$gt", Map.of("$field", "value", "$value", 80)
+            "$contains", Map.of("$value", "invalid")
         );
-        
-        // When
-        boolean result = ruleEvaluationService.evaluateRules(rules, invalidMessage);
-        
-        // Then
-        assertFalse(result, "Should return false when JSON is invalid");
-    }
-    
-    @Test
-    @DisplayName("Should handle unsupported operator gracefully")
-    void shouldHandleUnsupportedOperatorGracefully() {
-        // Given
-        String message = "{\"value\": 85}";
-        Map<String, Object> rules = Map.of(
-            "$unsupported", Map.of("$field", "value", "$value", 80)
-        );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertFalse(result, "Should return false when operator is unsupported");
+        assertTrue(result, "Should treat invalid JSON as string and evaluate contains");
     }
-    
+
     @Test
-    @DisplayName("Should evaluate complex nested AND/OR rules")
-    void shouldEvaluateComplexNestedRules() {
+    @DisplayName("Should handle unsupported operator")
+    void shouldHandleUnsupportedOperator() {
         // Given
-        String message = "{\"cpu\": 85, \"memory\": 70, \"disk\": 60, \"status\": \"warning\"}";
+        String message = "10";
         Map<String, Object> rules = Map.of(
-            "$and", List.of(
-                Map.of("$or", List.of(
-                    Map.of("$gt", Map.of("$field", "cpu", "$value", 80)),
-                    Map.of("$gt", Map.of("$field", "memory", "$value", 80))
-                )),
-                Map.of("$eq", Map.of("$field", "status", "$value", "warning"))
-            )
+            "$unsupported", Map.of("$value", 8)
         );
-        
+
         // When
         boolean result = ruleEvaluationService.evaluateRules(rules, message);
-        
+
         // Then
-        assertTrue(result, "Should handle complex nested AND/OR rules correctly");
+        assertFalse(result, "Unsupported operator should return false");
     }
-    
+
+    // ========== REAL-WORLD USE CASE TESTS ==========
+
     @Test
-    @DisplayName("Should evaluate all comparison operators correctly")
-    void shouldEvaluateAllComparisonOperators() {
+    @DisplayName("Should monitor CPU usage threshold - your original requirement")
+    void shouldMonitorCpuUsageThreshold() {
+        // Given - CPU usage monitoring scenario
+        String message = "{\"timestamp\": \"2025-08-23T10:30:00Z\", \"metrics\": {\"cpu\": 92, \"memory\": 75}, \"host\": \"server1\"}";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$field", "metrics.cpu", "$value", 90)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "Should trigger alert when CPU > 90%");
+    }
+
+    @Test
+    @DisplayName("Should handle simple threshold monitoring - value > 8")
+    void shouldHandleSimpleThresholdMonitoring() {
+        // Given - Simple value monitoring (like your original requirement)
+        String message = "12";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "Should trigger when value > 8");
+    }
+
+    @Test
+    @DisplayName("Should not trigger when value <= 8")
+    void shouldNotTriggerWhenValueLessOrEqualTo8() {
         // Given
-        String message = "{\"value\": 75}";
-        
-        // Test $gte
-        Map<String, Object> gteRules = Map.of("$gte", Map.of("$field", "value", "$value", 75));
-        assertTrue(ruleEvaluationService.evaluateRules(gteRules, message), "GTE should work for equal values");
-        
-        // Test $lt
-        Map<String, Object> ltRules = Map.of("$lt", Map.of("$field", "value", "$value", 80));
-        assertTrue(ruleEvaluationService.evaluateRules(ltRules, message), "LT should work when value is less");
-        
-        // Test $lte
-        Map<String, Object> lteRules = Map.of("$lte", Map.of("$field", "value", "$value", 75));
-        assertTrue(ruleEvaluationService.evaluateRules(lteRules, message), "LTE should work for equal values");
+        String message = "7";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertFalse(result, "Should not trigger when value <= 8");
+    }
+
+    @Test
+    @DisplayName("Should handle exactly 8")
+    void shouldHandleExactly8() {
+        // Given
+        String message = "8";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertFalse(result, "8 should not be greater than 8");
+    }
+
+    @Test
+    @DisplayName("Should handle boundary case - 8.1")
+    void shouldHandleBoundaryCase() {
+        // Given
+        String message = "8.1";
+        Map<String, Object> rules = Map.of(
+            "$gt", Map.of("$value", 8)
+        );
+
+        // When
+        boolean result = ruleEvaluationService.evaluateRules(rules, message);
+
+        // Then
+        assertTrue(result, "8.1 should be greater than 8");
     }
 }

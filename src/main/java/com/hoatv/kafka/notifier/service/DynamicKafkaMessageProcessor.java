@@ -153,7 +153,7 @@ public class DynamicKafkaMessageProcessor {
                 return;
             }
 
-            LOGGER.info("Processing {} configurations for topic: {}", configurations.size(), topic);
+            LOGGER.debug("Processing {} configurations for topic: {}", configurations.size(), topic);
             configurations.forEach(config -> processConfigurationForMessage(config, message, topic));
         } catch (Exception e) {
             LOGGER.error("Error processing message from topic '{}': {}", topic, e.getMessage(), e);
