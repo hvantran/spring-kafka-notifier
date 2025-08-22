@@ -3,10 +3,10 @@ package com.hoatv.kafka.notifier.service;
 import com.hoatv.kafka.notifier.dto.NotifierConfigurationResponse;
 import com.hoatv.kafka.notifier.model.NotifierConfiguration;
 import com.hoatv.kafka.notifier.model.NotificationAction;
+import com.hoatv.kafka.notifier.repository.NotifierConfigurationRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -29,18 +29,15 @@ public class DynamicKafkaMessageProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicKafkaMessageProcessor.class);
 
-    private final NotifierConfigurationService configurationService;
+    private final NotifierConfigurationRepository repository;
     private final RuleEvaluationService ruleEvaluationService;
     private final NotificationService notificationService;
-    @Qualifier("dynamicConsumerFactory")
     private final ConsumerFactory<String, String> consumerFactory;
+    private final Set<String> subscribedTopics = new CopyOnWriteArraySet<>();
+    private final Map<String, KafkaMessageListenerContainer<String, String>> topicContainers = new ConcurrentHashMap<>();
 
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
-
-    // Track active topic subscriptions
-    private final Set<String> subscribedTopics = new CopyOnWriteArraySet<>();
-    private final Map<String, KafkaMessageListenerContainer<String, String>> topicContainers = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void initializeSubscriptions() {
@@ -66,34 +63,22 @@ public class DynamicKafkaMessageProcessor {
      */
     public void refreshTopicSubscriptions() {
         LOGGER.info("Refreshing Kafka topic subscriptions");
-        
+
         try {
-            // Get all topics from enabled configurations
-            Set<String> requiredTopics = configurationService.findEnabledConfigurations()
+            Set<String> requiredTopics = repository.findByEnabledTrue()
                     .stream()
-                    .map(NotifierConfigurationResponse::getTopic)
+                    .map(NotifierConfiguration::getTopic)
                     .collect(Collectors.toSet());
 
             LOGGER.debug("Required topics: {}, Currently subscribed: {}", requiredTopics, subscribedTopics);
-
-            // Remove subscriptions for topics that are no longer needed
             Set<String> topicsToUnsubscribe = new CopyOnWriteArraySet<>(subscribedTopics);
             topicsToUnsubscribe.removeAll(requiredTopics);
-            
-            for (String topic : topicsToUnsubscribe) {
-                unsubscribeFromTopic(topic);
-            }
+            topicsToUnsubscribe.forEach(this::unsubscribeFromTopic);
 
-            // Add subscriptions for new topics
             Set<String> topicsToSubscribe = new CopyOnWriteArraySet<>(requiredTopics);
             topicsToSubscribe.removeAll(subscribedTopics);
-            
-            for (String topic : topicsToSubscribe) {
-                subscribeToTopic(topic);
-            }
-
+            topicsToSubscribe.forEach(this::subscribeToTopic);
             LOGGER.info("Topic subscription refresh completed. Active topics: {}", subscribedTopics);
-
         } catch (Exception e) {
             LOGGER.error("Error refreshing topic subscriptions: {}", e.getMessage(), e);
         }
@@ -102,7 +87,7 @@ public class DynamicKafkaMessageProcessor {
     /**
      * Subscribe to a specific topic
      */
-    private void subscribeToTopic(String topic) {
+    public void subscribeToTopic(String topic) {
         if (subscribedTopics.contains(topic)) {
             LOGGER.debug("Already subscribed to topic: {}", topic);
             return;
@@ -110,25 +95,21 @@ public class DynamicKafkaMessageProcessor {
 
         try {
             LOGGER.info("Subscribing to topic: {}", topic);
-
-            // Create container properties
             ContainerProperties containerProps = new ContainerProperties(topic);
             containerProps.setGroupId(groupId);
+
+            List<NotifierConfiguration> configurations = repository.findByTopicAndEnabledTrue(topic);
             containerProps.setMessageListener((MessageListener<String, String>) record -> {
-                processMessage(record.value(), record.topic());
+                processMessage(record.value(), record.topic(), configurations);
             });
 
-            // Create and start the container
-            KafkaMessageListenerContainer<String, String> container = 
-                new KafkaMessageListenerContainer<>(consumerFactory, containerProps);
+            KafkaMessageListenerContainer<String, String> container =
+                    new KafkaMessageListenerContainer<>(consumerFactory, containerProps);
             container.start();
 
-            // Track the subscription
             topicContainers.put(topic, container);
             subscribedTopics.add(topic);
-
             LOGGER.info("Successfully subscribed to topic: {}", topic);
-
         } catch (Exception e) {
             LOGGER.error("Failed to subscribe to topic '{}': {}", topic, e.getMessage(), e);
         }
@@ -137,7 +118,7 @@ public class DynamicKafkaMessageProcessor {
     /**
      * Unsubscribe from a specific topic
      */
-    private void unsubscribeFromTopic(String topic) {
+    public void unsubscribeFromTopic(String topic) {
         if (!subscribedTopics.contains(topic)) {
             LOGGER.debug("Not subscribed to topic: {}", topic);
             return;
@@ -145,7 +126,6 @@ public class DynamicKafkaMessageProcessor {
 
         try {
             LOGGER.info("Unsubscribing from topic: {}", topic);
-
             KafkaMessageListenerContainer<String, String> container = topicContainers.get(topic);
             if (container != null && container.isRunning()) {
                 container.stop();
@@ -153,7 +133,6 @@ public class DynamicKafkaMessageProcessor {
 
             topicContainers.remove(topic);
             subscribedTopics.remove(topic);
-
             LOGGER.info("Successfully unsubscribed from topic: {}", topic);
 
         } catch (Exception e) {
@@ -161,45 +140,21 @@ public class DynamicKafkaMessageProcessor {
         }
     }
 
-    /**
-     * Add a new topic subscription immediately (called when new notifier is created)
-     */
-    public void addTopicSubscription(String topic) {
-        LOGGER.info("Adding immediate subscription for new topic: {}", topic);
-        subscribeToTopic(topic);
-    }
-
-    /**
-     * Remove topic subscription if no enabled configurations exist
-     */
-    public void removeTopicSubscriptionIfUnused(String topic) {
-        List<NotifierConfiguration> enabledConfigs = configurationService.findEnabledConfigurationsByTopic(topic);
-        if (enabledConfigs.isEmpty()) {
-            LOGGER.info("No enabled configurations found for topic '{}', removing subscription", topic);
-            unsubscribeFromTopic(topic);
-        }
-    }
 
     /**
      * Process incoming Kafka message (same logic as the original processor)
      */
-    public void processMessage(String message, String topic) {
+    public void processMessage(String message, String topic, List<NotifierConfiguration> configurations) {
         LOGGER.debug("Received message from topic '{}': {}", topic, message);
 
         try {
-            List<NotifierConfiguration> configurations =
-                    configurationService.findEnabledConfigurationsByTopic(topic);
-
             if (configurations.isEmpty()) {
                 LOGGER.debug("No enabled configurations found for topic: {}", topic);
                 return;
             }
 
             LOGGER.info("Processing {} configurations for topic: {}", configurations.size(), topic);
-            for (NotifierConfiguration config : configurations) {
-                processConfigurationForMessage(config, message, topic);
-            }
-
+            configurations.forEach(config -> processConfigurationForMessage(config, message, topic));
         } catch (Exception e) {
             LOGGER.error("Error processing message from topic '{}': {}", topic, e.getMessage(), e);
         }
@@ -215,14 +170,14 @@ public class DynamicKafkaMessageProcessor {
                     config.getRules(), message);
 
             if (rulesMatch) {
-                LOGGER.info("Rules matched for configuration: {} on topic: {}. Executing actions.", 
-                           config.getNotifier(), topic);
+                LOGGER.info("Rules matched for configuration: {} on topic: {}. Executing actions.",
+                        config.getNotifier(), topic);
                 for (NotificationAction action : config.getActions()) {
                     executeAction(action, message, config);
                 }
             } else {
-                LOGGER.debug("Rules did not match for configuration: {} on topic: {}", 
-                            config.getNotifier(), topic);
+                LOGGER.debug("Rules did not match for configuration: {} on topic: {}",
+                        config.getNotifier(), topic);
             }
 
         } catch (Exception e) {

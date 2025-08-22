@@ -1,11 +1,11 @@
 package com.hoatv.kafka.notifier.service;
 
+import com.hoatv.fwk.common.exceptions.DuplicateResourceException;
+import com.hoatv.fwk.common.exceptions.EntityNotFoundException;
 import com.hoatv.kafka.notifier.dto.NotifierConfigurationRequest;
 import com.hoatv.kafka.notifier.dto.NotifierConfigurationResponse;
 import com.hoatv.kafka.notifier.model.NotifierConfiguration;
 import com.hoatv.kafka.notifier.repository.NotifierConfigurationRepository;
-import com.hoatv.kafka.notifier.exception.ResourceNotFoundException;
-import com.hoatv.kafka.notifier.exception.DuplicateResourceException;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -23,15 +23,14 @@ import java.util.stream.Collectors;
 public class NotifierConfigurationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotifierConfigurationService.class);
-    
+
+    private final KafkaService kafkaService;
     private final NotifierConfigurationRepository repository;
-    private final DynamicKafkaMessageProcessor dynamicProcessor;
-    
+
     public NotifierConfigurationResponse create(NotifierConfigurationRequest request) {
         LOGGER.info("Creating notifier configuration for notifier: {}, topic: {}", 
                 request.getNotifier(), request.getTopic());
         
-        // Check if configuration already exists
         if (repository.existsByNotifierAndTopic(request.getNotifier(), request.getTopic())) {
             throw new DuplicateResourceException(
                 String.format("Configuration already exists for notifier '%s' and topic '%s'", 
@@ -48,27 +47,25 @@ public class NotifierConfigurationService {
                 .createdAt(LocalDateTime.now())
                 .build();
         
-        NotifierConfiguration saved = repository.save(config);
-        LOGGER.info("Successfully created notifier configuration with ID: {}", saved.getId());
-        
-        // Dynamically subscribe to the new topic if enabled
-        if (saved.isEnabled()) {
-            dynamicProcessor.addTopicSubscription(saved.getTopic());
+        NotifierConfiguration savedNotifierConfiguration = repository.save(config);
+        LOGGER.info("Successfully created notifier configuration with ID: {}", savedNotifierConfiguration.getId());
+        if (savedNotifierConfiguration.isEnabled()) {
+            kafkaService.addTopicSubscription(savedNotifierConfiguration.getTopic());
         }
         
-        return mapToResponse(saved);
+        return mapToResponse(savedNotifierConfiguration);
     }
     
     public NotifierConfigurationResponse update(String id, NotifierConfigurationRequest request) {
         LOGGER.info("Updating notifier configuration with ID: {}", id);
         
         NotifierConfiguration existingConfig = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "NotifierConfiguration not found with ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("NotifierConfiguration not found with ID: " + id));
         
         // Check if updating notifier/topic combination conflicts with existing config
-        if (!existingConfig.getNotifier().equals(request.getNotifier()) || 
-            !existingConfig.getTopic().equals(request.getTopic())) {
+        String topic = existingConfig.getTopic();
+        if (!existingConfig.getNotifier().equals(request.getNotifier()) ||
+            !topic.equals(request.getTopic())) {
             if (repository.existsByNotifierAndTopic(request.getNotifier(), request.getTopic())) {
                 throw new DuplicateResourceException(
                     String.format("Configuration already exists for notifier '%s' and topic '%s'", 
@@ -89,11 +86,12 @@ public class NotifierConfigurationService {
         
         // Handle topic subscription changes
         if (updated.isEnabled()) {
-            dynamicProcessor.addTopicSubscription(updated.getTopic());
+            kafkaService.addTopicSubscription(updated.getTopic());
         }
         // Check if old topic still has enabled configurations
-        if (!existingConfig.getTopic().equals(updated.getTopic())) {
-            dynamicProcessor.removeTopicSubscriptionIfUnused(existingConfig.getTopic());
+        if (!topic.equals(updated.getTopic())) {
+            List<NotifierConfiguration> enabledConfigs = findEnabledConfigurationsByTopic(topic);
+            kafkaService.removeTopicSubscriptionIfUnused(topic, enabledConfigs);
         }
         
         return mapToResponse(updated);
@@ -103,7 +101,7 @@ public class NotifierConfigurationService {
         LOGGER.debug("Finding notifier configuration with ID: {}", id);
         
         NotifierConfiguration config = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
+                .orElseThrow(() -> new EntityNotFoundException(
                     "NotifierConfiguration not found with ID: " + id));
         
         return mapToResponse(config);
@@ -134,23 +132,20 @@ public class NotifierConfigurationService {
     
     public List<NotifierConfiguration> findEnabledConfigurationsByTopic(String topic) {
         LOGGER.debug("Finding enabled notifier configurations for topic: {}", topic);
-        
         return repository.findByTopicAndEnabledTrue(topic);
     }
     
     public void delete(String id) {
         LOGGER.info("Deleting notifier configuration with ID: {}", id);
-        
         NotifierConfiguration config = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
+                .orElseThrow(() -> new EntityNotFoundException(
                     "NotifierConfiguration not found with ID: " + id));
         
         String topic = config.getTopic();
         repository.deleteById(id);
-        
-        // Remove topic subscription if no enabled configurations remain
-        dynamicProcessor.removeTopicSubscriptionIfUnused(topic);
-        
+
+        List<NotifierConfiguration> enabledConfigs = findEnabledConfigurationsByTopic(topic);
+        kafkaService.removeTopicSubscriptionIfUnused(topic, enabledConfigs);
         LOGGER.info("Successfully deleted notifier configuration with ID: {}", id);
     }
     
@@ -158,7 +153,7 @@ public class NotifierConfigurationService {
         LOGGER.info("Toggling enabled status for notifier configuration with ID: {}", id);
         
         NotifierConfiguration config = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
+                .orElseThrow(() -> new EntityNotFoundException(
                     "NotifierConfiguration not found with ID: " + id));
         
         config.setEnabled(!config.isEnabled());
@@ -169,10 +164,12 @@ public class NotifierConfigurationService {
                 id, updated.isEnabled());
         
         // Handle topic subscription based on new enabled status
+        String updatedTopic = updated.getTopic();
         if (updated.isEnabled()) {
-            dynamicProcessor.addTopicSubscription(updated.getTopic());
+            kafkaService.addTopicSubscription(updatedTopic);
         } else {
-            dynamicProcessor.removeTopicSubscriptionIfUnused(updated.getTopic());
+            List<NotifierConfiguration> enabledConfigs = findEnabledConfigurationsByTopic(updatedTopic);
+            kafkaService.removeTopicSubscriptionIfUnused(updatedTopic, enabledConfigs);
         }
         
         return mapToResponse(updated);

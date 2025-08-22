@@ -2,8 +2,8 @@ package com.hoatv.kafka.notifier.controller;
 
 import com.hoatv.kafka.notifier.dto.NotifierConfigurationRequest;
 import com.hoatv.kafka.notifier.dto.NotifierConfigurationResponse;
-import com.hoatv.kafka.notifier.service.NotifierConfigurationService;
 
+import com.hoatv.kafka.notifier.service.NotifierConfigurationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

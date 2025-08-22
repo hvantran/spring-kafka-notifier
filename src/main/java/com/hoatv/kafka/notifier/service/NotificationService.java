@@ -20,9 +20,9 @@ import java.util.regex.Pattern;
 public class NotificationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationService.class);
-    
-    private final SlackWebhookClient slackWebhookClient;
+
     private final ObjectMapper objectMapper;
+    private final SlackWebhookClient slackWebhookClient;
     
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
     
@@ -56,12 +56,9 @@ public class NotificationService {
             
             SlackMessage slackMessage = SlackMessage.of(finalMessage);
             slackWebhookClient.sendMessage(webhookUrl, slackMessage);
-            
             LOGGER.info("Successfully sent Slack notification for notifier: {}", config.getNotifier());
-            
         } catch (Exception e) {
-            LOGGER.error("Error sending Slack notification for configuration '{}': {}", 
-                    config.getNotifier(), e.getMessage(), e);
+            LOGGER.error("Error sending Slack notification for configuration '{}': {}", config.getNotifier(), e.getMessage(), e);
         }
     }
     
@@ -75,7 +72,6 @@ public class NotificationService {
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
-        
         return result.toString();
     }
     

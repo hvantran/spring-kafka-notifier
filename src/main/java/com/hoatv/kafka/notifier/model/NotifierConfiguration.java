@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -19,9 +20,10 @@ import java.util.Map;
 @Builder
 @Document(collection = "notifier_configurations")
 public class NotifierConfiguration {
-    
+
     @Id
-    private String id;
+    @Builder.Default
+    private String id =  UUID.randomUUID().toString();
     
     @NotBlank(message = "Notifier name is required")
     private String notifier;
