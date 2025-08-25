@@ -8,12 +8,14 @@ import com.hoatv.kafka.notifier.model.NotificationAction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +25,6 @@ public class NotificationService {
 
     private final ObjectMapper objectMapper;
     private final SlackWebhookClient slackWebhookClient;
-    
-    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
     
     public void executeNotificationAction(NotificationAction action, String message, NotifierConfiguration config) {
         try {
@@ -63,44 +63,47 @@ public class NotificationService {
     }
     
     private String replaceVariables(String template, JsonNode messageNode) {
-        Matcher matcher = VARIABLE_PATTERN.matcher(template);
-        StringBuilder result = new StringBuilder();
-        
-        while (matcher.find()) {
-            String variableName = matcher.group(1);
-            String replacement = getVariableValue(variableName, messageNode);
-            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
-        }
-        matcher.appendTail(result);
-        return result.toString();
+        Map<String, String> variableMap = createVariableMap(messageNode);
+        StringSubstitutor substitutor = new StringSubstitutor(variableMap);
+        return substitutor.replace(template);
     }
     
-    private String getVariableValue(String variableName, JsonNode messageNode) {
-        try {
-            // Special case: if variable name is "value" and messageNode is a simple value (not an object)
-            if ("value".equals(variableName) && !messageNode.isObject() && !messageNode.isArray()) {
-                return messageNode.asText();
-            }
-            
-            if (variableName.contains(".")) {
-                String[] parts = variableName.split("\\.");
-                JsonNode current = messageNode;
+    /**
+     * Create a map of variable names to their values from the JSON message
+     */
+    private Map<String, String> createVariableMap(JsonNode messageNode) {
+        Map<String, String> variableMap = new HashMap<>();
+        
+        // Special case: if messageNode is a simple value (not an object), map it to "value"
+        if (!messageNode.isObject() && !messageNode.isArray()) {
+            variableMap.put("value", messageNode.asText());
+            return variableMap;
+        }
+        
+        // For JSON objects, flatten all fields into the variable map
+        if (messageNode.isObject()) {
+            flattenJsonToMap(messageNode, "", variableMap);
+        }
+        
+        return variableMap;
+    }
+    
+    /**
+     * Recursively flatten JSON object into a map with dot-notation keys
+     */
+    private void flattenJsonToMap(JsonNode node, String prefix, Map<String, String> map) {
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> field = fields.next();
+                String key = prefix.isEmpty() ? field.getKey() : prefix + "." + field.getKey();
                 
-                for (String part : parts) {
-                    if (current == null) {
-                        break;
-                    }
-                    current = current.get(part);
+                if (field.getValue().isObject()) {
+                    flattenJsonToMap(field.getValue(), key, map);
+                } else {
+                    map.put(key, field.getValue().asText());
                 }
-                
-                return current != null ? current.asText() : "${" + variableName + "}";
-            } else {
-                JsonNode fieldNode = messageNode.get(variableName);
-                return fieldNode != null ? fieldNode.asText() : "${" + variableName + "}";
             }
-        } catch (Exception e) {
-            LOGGER.warn("Error extracting variable '{}' from message: {}", variableName, e.getMessage());
-            return "${" + variableName + "}";
         }
     }
     
