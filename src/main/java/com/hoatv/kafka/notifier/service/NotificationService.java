@@ -77,6 +77,11 @@ public class NotificationService {
     
     private String getVariableValue(String variableName, JsonNode messageNode) {
         try {
+            // Special case: if variable name is "value" and messageNode is a simple value (not an object)
+            if ("value".equals(variableName) && !messageNode.isObject() && !messageNode.isArray()) {
+                return messageNode.asText();
+            }
+            
             if (variableName.contains(".")) {
                 String[] parts = variableName.split("\\.");
                 JsonNode current = messageNode;
