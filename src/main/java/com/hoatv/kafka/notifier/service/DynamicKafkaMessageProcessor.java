@@ -32,6 +32,7 @@ public class DynamicKafkaMessageProcessor {
     private final NotifierConfigurationRepository repository;
     private final RuleEvaluationService ruleEvaluationService;
     private final NotificationService notificationService;
+    private final NotificationThrottlingService throttlingService;
     private final ConsumerFactory<String, String> consumerFactory;
     private final Set<String> subscribedTopics = new CopyOnWriteArraySet<>();
     private final Map<String, KafkaMessageListenerContainer<String, String>> topicContainers = new ConcurrentHashMap<>();
@@ -170,10 +171,23 @@ public class DynamicKafkaMessageProcessor {
                     config.getRules(), message);
 
             if (rulesMatch) {
-                LOGGER.info("Rules matched for configuration: {} on topic: {}. Executing actions.",
+                LOGGER.info("Rules matched for configuration: {} on topic: {}. Checking throttling.",
                         config.getNotifier(), topic);
-                for (NotificationAction action : config.getActions()) {
-                    executeAction(action, message, config);
+                
+                // Check if notification should be sent based on throttling rules
+                if (throttlingService.shouldSendNotification(config)) {
+                    LOGGER.info("Executing actions for configuration: {} on topic: {}",
+                            config.getNotifier(), topic);
+                    
+                    for (NotificationAction action : config.getActions()) {
+                        executeAction(action, message, config);
+                    }
+                    
+                    // Record that notification was sent for throttling purposes
+                    throttlingService.recordNotificationSent(config);
+                } else {
+                    LOGGER.info("Notification throttled for configuration: {} on topic: {}",
+                            config.getNotifier(), topic);
                 }
             } else {
                 LOGGER.debug("Rules did not match for configuration: {} on topic: {}",

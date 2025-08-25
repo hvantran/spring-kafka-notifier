@@ -23,6 +23,7 @@ public class NotifierConfigurationResponse {
     private List<NotificationAction> actions;
     private boolean enabled;
     private String description;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
