@@ -42,6 +42,11 @@ public class NotifierConfiguration {
     
     private String description;
     
+    // Throttling configuration (optional - falls back to resilience4j.yml defaults)
+    private Long throttlePeriodMinutes; // null = use default from resilience4j.yml
+    
+    private Integer throttlePermitsPerPeriod; // null = use default from resilience4j.yml
+    
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     

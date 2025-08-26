@@ -44,6 +44,8 @@ public class NotifierConfigurationService {
                 .actions(request.getActions())
                 .enabled(request.getEnabled() != null ? request.getEnabled() : true)
                 .description(request.getDescription())
+                .throttlePeriodMinutes(request.getThrottlePeriodMinutes())
+                .throttlePermitsPerPeriod(request.getThrottlePermitsPerPeriod())
                 .createdAt(LocalDateTime.now())
                 .build();
         
@@ -79,6 +81,8 @@ public class NotifierConfigurationService {
         existingConfig.setActions(request.getActions());
         existingConfig.setEnabled(request.getEnabled() != null ? request.getEnabled() : existingConfig.isEnabled());
         existingConfig.setDescription(request.getDescription());
+        existingConfig.setThrottlePeriodMinutes(request.getThrottlePeriodMinutes());
+        existingConfig.setThrottlePermitsPerPeriod(request.getThrottlePermitsPerPeriod());
         existingConfig.setUpdatedAt(LocalDateTime.now());
         
         NotifierConfiguration updated = repository.save(existingConfig);
@@ -184,6 +188,8 @@ public class NotifierConfigurationService {
                 .actions(config.getActions())
                 .enabled(config.isEnabled())
                 .description(config.getDescription())
+                .throttlePeriodMinutes(config.getThrottlePeriodMinutes())
+                .throttlePermitsPerPeriod(config.getThrottlePermitsPerPeriod())
                 .createdAt(config.getCreatedAt())
                 .updatedAt(config.getUpdatedAt())
                 .createdBy(config.getCreatedBy())

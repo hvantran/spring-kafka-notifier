@@ -1,0 +1,15 @@
+# Resilience4j Rate Limiter Configuration for Notification Throttling
+resilience4j:
+  ratelimiter:
+    configs:
+      default:
+        limitForPeriod: 1      # Maximum 1 notification
+        limitRefreshPeriod: 5m  # Per 5 minutes
+        timeoutDuration: 0s     # Don't wait if limit exceeded
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 100
+    instances:
+      notification-throttling:
+        baseConfig: default
+        limitForPeriod: 1
+        limitRefreshPeriod: 5m

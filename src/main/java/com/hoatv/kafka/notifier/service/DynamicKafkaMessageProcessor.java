@@ -182,9 +182,6 @@ public class DynamicKafkaMessageProcessor {
                     for (NotificationAction action : config.getActions()) {
                         executeAction(action, message, config);
                     }
-                    
-                    // Record that notification was sent for throttling purposes
-                    throttlingService.recordNotificationSent(config);
                 } else {
                     LOGGER.info("Notification throttled for configuration: {} on topic: {}",
                             config.getNotifier(), topic);

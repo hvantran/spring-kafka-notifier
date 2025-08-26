@@ -24,6 +24,11 @@ public class NotifierConfigurationResponse {
     private boolean enabled;
     private String description;
     
+    // Throttling configuration (optional - falls back to resilience4j.yml defaults)
+    private Long throttlePeriodMinutes;
+    
+    private Integer throttlePermitsPerPeriod;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
