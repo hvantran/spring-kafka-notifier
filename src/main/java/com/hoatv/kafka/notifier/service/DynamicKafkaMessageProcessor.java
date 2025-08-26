@@ -1,6 +1,5 @@
 package com.hoatv.kafka.notifier.service;
 
-import com.hoatv.kafka.notifier.dto.NotifierConfigurationResponse;
 import com.hoatv.kafka.notifier.model.NotifierConfiguration;
 import com.hoatv.kafka.notifier.model.NotificationAction;
 import com.hoatv.kafka.notifier.repository.NotifierConfigurationRepository;
@@ -14,8 +13,8 @@ import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

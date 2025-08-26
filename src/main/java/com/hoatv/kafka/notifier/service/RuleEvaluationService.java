@@ -68,7 +68,6 @@ public class RuleEvaluationService {
      * Parse simple values into appropriate JsonNode types
      */
     private JsonNode parseAsSimpleValue(String value) {
-        // Try to parse as number (integer or decimal)
         try {
             if (value.contains(".")) {
                 double doubleValue = Double.parseDouble(value);
@@ -268,13 +267,10 @@ public class RuleEvaluationService {
         String searchValue = (String) condition.get("$value");
 
         if (field != null && searchValue != null) {
-            // Field-based string search
             JsonNode fieldNode = getFieldValue(messageNode, field);
             if (fieldNode == null || !fieldNode.isTextual()) return false;
-
             return fieldNode.asText().toLowerCase().contains(searchValue.toLowerCase());
         } else if (searchValue != null) {
-            // Direct string search for simple string values
             if (messageNode.isTextual()) {
                 return messageNode.asText().toLowerCase().contains(searchValue.toLowerCase());
             }
@@ -292,13 +288,10 @@ public class RuleEvaluationService {
         Object compareValue = condition.get("$value");
 
         if (field != null && compareValue != null) {
-            // Field-based comparison for JSON objects
             JsonNode fieldNode = getFieldValue(messageNode, field);
             if (fieldNode == null || !fieldNode.isNumber()) return false;
-
             double messageValue = fieldNode.asDouble();
             double conditionValue = Double.parseDouble(compareValue.toString());
-
             return operator.compare(messageValue, conditionValue);
         }
 
@@ -307,7 +300,6 @@ public class RuleEvaluationService {
         if (directValue != null && messageNode.isNumber()) {
             double messageValue = messageNode.asDouble();
             double conditionValue = Double.parseDouble(directValue.toString());
-
             return operator.compare(messageValue, conditionValue);
         }
 
