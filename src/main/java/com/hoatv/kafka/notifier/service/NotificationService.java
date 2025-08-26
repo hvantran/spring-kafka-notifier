@@ -51,7 +51,15 @@ public class NotificationService {
                 return;
             }
             
-            JsonNode messageNode = objectMapper.readTree(message);
+            // Try to parse as JSON, if it fails, treat as simple string value
+            JsonNode messageNode;
+            try {
+                messageNode = objectMapper.readTree(message);
+            } catch (Exception e) {
+                // If not valid JSON, wrap as a simple string value
+                messageNode = objectMapper.valueToTree(message);
+            }
+            
             String finalMessage = replaceVariables(messageTemplate, messageNode);
             
             SlackMessage slackMessage = SlackMessage.of(finalMessage);
