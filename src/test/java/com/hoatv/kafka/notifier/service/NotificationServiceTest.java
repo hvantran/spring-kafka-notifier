@@ -8,11 +8,11 @@ import com.hoatv.kafka.notifier.model.NotifierConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,13 +24,13 @@ import static org.mockito.Mockito.*;
  * Test cases for NotificationService class
  * Tests focus on variable substitution in message templates
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("Notification Service Tests")
 class NotificationServiceTest {
 
     @Mock
     private SlackWebhookClient slackWebhookClient;
 
-    @InjectMocks
     private NotificationService notificationService;
 
     @Captor
@@ -41,7 +41,6 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        MockitoAnnotations.openMocks(this);
         notificationService = new NotificationService(objectMapper, slackWebhookClient);
     }
 
