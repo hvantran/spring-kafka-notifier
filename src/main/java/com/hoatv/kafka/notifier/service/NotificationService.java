@@ -51,17 +51,8 @@ public class NotificationService {
                 return;
             }
             
-            // Try to parse as JSON, if it fails, treat as simple string value
-            JsonNode messageNode;
-            try {
-                messageNode = objectMapper.readTree(message);
-            } catch (Exception e) {
-                // If not valid JSON, wrap as a simple string value
-                messageNode = objectMapper.valueToTree(message);
-            }
-            
+            JsonNode messageNode = getMessageNode(message);
             String finalMessage = replaceVariables(messageTemplate, messageNode);
-            
             SlackMessage slackMessage = SlackMessage.of(finalMessage);
             slackWebhookClient.sendMessage(webhookUrl, slackMessage);
             LOGGER.info("Successfully sent Slack notification for notifier: {}", config.getNotifier());
@@ -69,7 +60,17 @@ public class NotificationService {
             LOGGER.error("Error sending Slack notification for configuration '{}': {}", config.getNotifier(), e.getMessage(), e);
         }
     }
-    
+
+    private JsonNode getMessageNode(String message) {
+        JsonNode messageNode;
+        try {
+            messageNode = objectMapper.readTree(message);
+        } catch (Exception e) {
+            messageNode = objectMapper.valueToTree(message);
+        }
+        return messageNode;
+    }
+
     private String replaceVariables(String template, JsonNode messageNode) {
         Map<String, String> variableMap = createVariableMap(messageNode);
         StringSubstitutor substitutor = new StringSubstitutor(variableMap);
@@ -82,13 +83,11 @@ public class NotificationService {
     private Map<String, String> createVariableMap(JsonNode messageNode) {
         Map<String, String> variableMap = new HashMap<>();
         
-        // Special case: if messageNode is a simple value (not an object), map it to "value"
         if (!messageNode.isObject() && !messageNode.isArray()) {
             variableMap.put("value", messageNode.asText());
             return variableMap;
         }
         
-        // For JSON objects, flatten all fields into the variable map
         if (messageNode.isObject()) {
             flattenJsonToMap(messageNode, "", variableMap);
         }
