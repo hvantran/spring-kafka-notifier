@@ -103,7 +103,6 @@ class NotificationServiceIntegrationTest {
         public void sendMessage(String webhookUrl, SlackMessage message) {
             // Verify that the message has the correct substitution
             String messageText = message.getText();
-            System.out.println("Test Slack message would be sent: " + messageText);
             
             // Assert that ${value} has been replaced and is not present in the final message
             assertFalse(messageText.contains("${value}"), 

@@ -37,10 +37,6 @@ class ThrottlingTest {
         RateLimiter.Metrics metrics = rateLimiter.getMetrics();
         assertEquals(0, metrics.getAvailablePermissions(), "Should have no available permissions after being used");
         // Note: Number of waiting threads is 0 because timeout is set to ZERO (fail fast)
-        
-        System.out.println("Rate limiter metrics:");
-        System.out.println("Available permissions: " + metrics.getAvailablePermissions());
-        System.out.println("Number of waiting threads: " + metrics.getNumberOfWaitingThreads());
     }
 
     @Test
@@ -69,15 +65,11 @@ class ThrottlingTest {
                 
                 if (shouldSend) {
                     sentNotifications++;
-                    System.out.println("✅ Notification sent for message #" + i);
-                } else {
-                    System.out.println("🛑 Notification throttled for message #" + i);
                 }
             }
         }
         
         // Verify only 1 notification was sent despite 10 matching messages
         assertEquals(1, sentNotifications, "Should only send 1 notification despite 10 matching messages");
-        System.out.println("\n📊 Result: " + sentNotifications + " notifications sent out of " + totalMessages + " matching messages");
     }
 }

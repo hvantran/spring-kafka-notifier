@@ -143,8 +143,6 @@ class ConfigurationAwareThrottlingTest {
     @Test
     @DisplayName("Should demonstrate configuration priority: NotifierConfiguration > resilience4j.yml defaults")
     void shouldDemonstrateConfigurationPriority() {
-        System.out.println("\n🔧 Configuration Priority Demo:");
-        
         // Default configuration (from resilience4j.yml)
         NotifierConfiguration defaultConfig = NotifierConfiguration.builder()
                 .notifier("default-notifier")
@@ -159,22 +157,14 @@ class ConfigurationAwareThrottlingTest {
                 .throttlePermitsPerPeriod(3)  // Override: 3 permits
                 .build();
 
-        // Test default config
-        System.out.println("📋 Default Config (from resilience4j.yml): 1 permit per 5 minutes");
+        // Test default config - 1 permit per 5 minutes
         assertTrue(throttlingService.shouldSendNotification(defaultConfig));
-        System.out.println("  ✅ First notification allowed");
         assertFalse(throttlingService.shouldSendNotification(defaultConfig));
-        System.out.println("  🛑 Second notification throttled");
 
-        // Test custom config
-        System.out.println("\n⚙️  Custom Config (from NotifierConfiguration): 3 permits per 1 minute");
+        // Test custom config - 3 permits per 1 minute
         for (int i = 1; i <= 3; i++) {
             assertTrue(throttlingService.shouldSendNotification(customConfig));
-            System.out.println("  ✅ Notification " + i + " allowed");
         }
         assertFalse(throttlingService.shouldSendNotification(customConfig));
-        System.out.println("  🛑 Notification 4 throttled");
-        
-        System.out.println("\n🎯 Result: Custom configuration successfully overrides defaults!");
     }
 }
