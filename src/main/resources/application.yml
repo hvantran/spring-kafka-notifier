@@ -1,0 +1,42 @@
+# Import resilience4j configuration
+spring:
+  config:
+    import: 
+      - classpath:kafka.properties
+      - classpath:resilience4j.yml
+
+# Application configuration  
+  application:
+    name: spring-kafka-notifier
+  profiles:
+    active: ${spring.profiles.active}
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+
+# Server configuration
+server:
+  servlet:
+    context-path: /spring-kafka-notifier
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# SpringDoc configuration
+springdoc:
+  swagger-ui:
+    enabled: ${springdoc.swagger-ui.enabled}
+    path: /swagger-ui.html
+  api-docs:
+    enabled: ${springdoc.api-docs.enabled}
+  packages-to-scan: com.hoatv.kafka.notifier
+
+# Management configuration
+management:
+  metrics:
+    tags:
+      application: spring-kafka-notifier
+  endpoints:
+    web:
+      exposure:
+        include: "*"

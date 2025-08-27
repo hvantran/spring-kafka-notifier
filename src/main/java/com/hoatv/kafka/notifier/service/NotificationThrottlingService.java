@@ -40,8 +40,8 @@ public class NotificationThrottlingService {
         this.defaultPeriod = defaultConfig.getLimitRefreshPeriod();
         this.defaultPermits = defaultConfig.getLimitForPeriod();
         
-        log.info("NotificationThrottlingService initialized with defaults: {} permits per {}", 
-                defaultPermits, defaultPeriod);
+        log.info("NotificationThrottlingService initialized with defaults from resilience4j.yml: {} permits per {} (timeout: {})", 
+                defaultPermits, defaultPeriod, defaultConfig.getTimeoutDuration());
     }
 
     /**
