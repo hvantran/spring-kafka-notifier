@@ -13,6 +13,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hoatv.fwk.common.ultilities.StringCommonUtils.removeInvalidUserData;
+
 /**
  * Service for throttling notifications using Resilience4j RateLimiter.
  * Prevents notification flooding when conditions remain true across multiple messages.
@@ -92,7 +94,7 @@ public class NotificationThrottlingService {
 
         if (!allowed) {
             LOGGER.warn("Notification throttled for notifier: {} (rate limit: {} permits per {})",
-                    notifierName, permitsPerPeriod, period);
+                    removeInvalidUserData(notifierName), permitsPerPeriod, period);
         } else {
             LOGGER.debug("Notification allowed for notifier: {}", notifierName);
         }
@@ -128,7 +130,7 @@ public class NotificationThrottlingService {
             }
 
             LOGGER.info("Created RateLimiter for notifier: {} with {} permits per {} (key: {})",
-                    notifierName, permitsPerPeriod, period, rateLimiterKey);
+                    removeInvalidUserData(notifierName), permitsPerPeriod, period, removeInvalidUserData(rateLimiterKey));
 
             return rateLimiter;
         });
@@ -141,7 +143,7 @@ public class NotificationThrottlingService {
      */
     public void clearRateLimiter(String notifierName) {
         rateLimiters.remove(notifierName);
-        LOGGER.info("Cleared RateLimiter for notifier: {}", notifierName);
+        LOGGER.info("Cleared RateLimiter for notifier: {}", removeInvalidUserData(notifierName));
     }
 
     /**
