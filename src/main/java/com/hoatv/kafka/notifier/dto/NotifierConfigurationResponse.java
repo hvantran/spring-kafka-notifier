@@ -15,7 +15,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class NotifierConfigurationResponse {
-    
+
     private String id;
     private String notifier;
     private String topic;
@@ -23,12 +23,12 @@ public class NotifierConfigurationResponse {
     private List<NotificationAction> actions;
     private boolean enabled;
     private String description;
-    
+
     // Throttling configuration (optional - falls back to resilience4j.yml defaults)
     private Long throttlePeriodMinutes;
-    
+
     private Integer throttlePermitsPerPeriod;
-    
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;

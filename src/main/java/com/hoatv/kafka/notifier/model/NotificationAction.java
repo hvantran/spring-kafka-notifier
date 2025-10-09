@@ -7,6 +7,7 @@ import lombok.Builder;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.Map;
 
 @Data
@@ -14,10 +15,10 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class NotificationAction {
-    
+
     @NotBlank(message = "Action type is required")
     private String type;
-    
+
     @NotNull(message = "Action parameters are required")
     private Map<String, Object> params;
 }

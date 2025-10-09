@@ -37,12 +37,12 @@ public class KafkaTopicController {
     public ResponseEntity<Map<String, Object>> isSubscribedToTopic(@PathVariable String topic) {
         LOGGER.debug("Checking subscription status for topic: {}", topic);
         boolean isSubscribed = dynamicProcessor.isSubscribedToTopic(topic);
-        
+
         Map<String, Object> response = Map.of(
-            "topic", topic,
-            "subscribed", isSubscribed
+                "topic", topic,
+                "subscribed", isSubscribed
         );
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -51,20 +51,20 @@ public class KafkaTopicController {
     @PostMapping("/subscriptions/refresh")
     public ResponseEntity<Map<String, Object>> refreshSubscriptions() {
         LOGGER.info("Manual refresh of Kafka topic subscriptions requested");
-        
+
         Set<String> beforeRefresh = dynamicProcessor.getSubscribedTopics();
         dynamicProcessor.refreshTopicSubscriptions();
         Set<String> afterRefresh = dynamicProcessor.getSubscribedTopics();
-        
+
         Map<String, Object> response = Map.of(
-            "message", "Topic subscriptions refreshed successfully",
-            "beforeRefresh", beforeRefresh,
-            "afterRefresh", afterRefresh
+                "message", "Topic subscriptions refreshed successfully",
+                "beforeRefresh", beforeRefresh,
+                "afterRefresh", afterRefresh
         );
-        
-        LOGGER.info("Topic subscriptions manually refreshed. Before: {}, After: {}", 
-                   beforeRefresh, afterRefresh);
-        
+
+        LOGGER.info("Topic subscriptions manually refreshed. Before: {}, After: {}",
+                beforeRefresh, afterRefresh);
+
         return ResponseEntity.ok(response);
     }
 }

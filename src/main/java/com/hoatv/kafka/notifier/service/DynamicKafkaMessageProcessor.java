@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,12 +173,12 @@ public class DynamicKafkaMessageProcessor {
             if (rulesMatch) {
                 LOGGER.info("Rules matched for configuration: {} on topic: {}. Checking throttling.",
                         config.getNotifier(), topic);
-                
+
                 // Check if notification should be sent based on throttling rules
                 if (throttlingService.shouldSendNotification(config)) {
                     LOGGER.info("Executing actions for configuration: {} on topic: {}",
                             config.getNotifier(), topic);
-                    
+
                     for (NotificationAction action : config.getActions()) {
                         executeAction(action, message, config);
                     }

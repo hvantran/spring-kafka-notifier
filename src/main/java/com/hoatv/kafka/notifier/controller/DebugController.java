@@ -24,7 +24,7 @@ public class DebugController {
 
     @Autowired
     private RateLimiterRegistry rateLimiterRegistry;
-    
+
     @Autowired
     private NotificationThrottlingService throttlingService;
 
@@ -34,13 +34,13 @@ public class DebugController {
     @GetMapping("/rate-limiter-config")
     public Map<String, Object> getRateLimiterConfig() {
         RateLimiterConfig defaultConfig = rateLimiterRegistry.getDefaultConfig();
-        
+
         Map<String, Object> configInfo = new HashMap<>();
         configInfo.put("limitForPeriod", defaultConfig.getLimitForPeriod());
         configInfo.put("limitRefreshPeriod", defaultConfig.getLimitRefreshPeriod().toString());
         configInfo.put("timeoutDuration", defaultConfig.getTimeoutDuration().toString());
         configInfo.put("message", "Configuration loaded from resilience4j.yml");
-        
+
         log.info("Rate limiter configuration requested: {}", configInfo);
         return configInfo;
     }
@@ -51,13 +51,13 @@ public class DebugController {
     @GetMapping("/test-throttling")
     public Map<String, Object> testThrottling(@RequestParam(defaultValue = "debug-test") String notifierName) {
         boolean allowed = throttlingService.shouldSendNotification(notifierName);
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("notifierName", notifierName);
         result.put("allowed", allowed);
         result.put("timestamp", System.currentTimeMillis());
         result.put("message", allowed ? "Notification allowed" : "Notification throttled");
-        
+
         log.info("Throttling test for notifier '{}': {}", notifierName, allowed ? "ALLOWED" : "THROTTLED");
         return result;
     }
@@ -68,11 +68,11 @@ public class DebugController {
     @GetMapping("/clear-rate-limiter")
     public Map<String, Object> clearRateLimiter(@RequestParam String notifierName) {
         throttlingService.clearRateLimiter(notifierName);
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("message", "Rate limiter cleared for notifier: " + notifierName);
         result.put("notifierName", notifierName);
-        
+
         log.info("Rate limiter cleared for notifier: {}", notifierName);
         return result;
     }

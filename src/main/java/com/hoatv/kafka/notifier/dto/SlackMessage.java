@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SlackMessage {
-    
+
     private String text;
     private String channel;
     private String username;
     private String icon_emoji;
-    
+
     public static SlackMessage of(String text) {
         return SlackMessage.builder()
                 .text(text)

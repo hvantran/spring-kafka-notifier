@@ -13,7 +13,7 @@ import org.springframework.web.client.RestTemplate;
 public class SlackWebhookClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SlackWebhookClient.class);
-    
+
     private final RestTemplate restTemplate;
 
     public SlackWebhookClient(RestTemplate restTemplate) {
@@ -24,7 +24,7 @@ public class SlackWebhookClient {
      * Send a message to Slack via webhook
      *
      * @param webhookUrl The Slack webhook URL
-     * @param message The message to send
+     * @param message    The message to send
      */
     public void sendMessage(String webhookUrl, SlackMessage message) {
         try {

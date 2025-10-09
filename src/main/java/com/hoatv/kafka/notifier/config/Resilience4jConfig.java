@@ -35,7 +35,7 @@ public class Resilience4jConfig {
 
     /**
      * Create RateLimiterRegistry bean with default configuration from resilience4j.yml.
-     * 
+     *
      * @param properties the configuration properties loaded from resilience4j.yml
      * @return configured RateLimiterRegistry
      */
@@ -47,14 +47,14 @@ public class Resilience4jConfig {
                 .limitRefreshPeriod(properties.getLimitRefreshPeriod())
                 .timeoutDuration(properties.getTimeoutDuration())
                 .build();
-        
+
         RateLimiterRegistry registry = RateLimiterRegistry.of(defaultConfig);
-        
-        log.info("RateLimiterRegistry configured with defaults from resilience4j.yml: {} permits per {} (timeout: {})", 
-                defaultConfig.getLimitForPeriod(), 
+
+        log.info("RateLimiterRegistry configured with defaults from resilience4j.yml: {} permits per {} (timeout: {})",
+                defaultConfig.getLimitForPeriod(),
                 defaultConfig.getLimitRefreshPeriod(),
                 defaultConfig.getTimeoutDuration());
-        
+
         return registry;
     }
 }
