@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-oracle as builder
+FROM ${docker.java.base} as builder
 # First stage : Extract the layers
 WORKDIR application
 COPY ${project.build.finalName}.jar ${project.build.finalName}.jar
