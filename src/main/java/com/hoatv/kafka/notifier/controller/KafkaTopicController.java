@@ -34,7 +34,7 @@ public class KafkaTopicController {
     @Operation(summary = "Check if subscribed to a specific topic")
     @ApiResponse(responseCode = "200", description = "Subscription status retrieved successfully")
     @GetMapping("/subscriptions/{topic}")
-    public ResponseEntity<Map<String, Object>> isSubscribedToTopic(@PathVariable String topic) {
+    public ResponseEntity<Map<String, Object>> isSubscribedToTopic(@PathVariable("topic") String topic) {
         LOGGER.debug("Checking subscription status for topic: {}", topic);
         boolean isSubscribed = dynamicProcessor.isSubscribedToTopic(topic);
 
