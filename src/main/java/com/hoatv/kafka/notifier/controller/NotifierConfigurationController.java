@@ -96,7 +96,7 @@ public class NotifierConfigurationController {
 
     @Operation(summary = "Get notifier configurations by topic")
     @ApiResponse(responseCode = "200", description = "Configurations retrieved successfully")
-    @GetMapping("/topic/{topic}")
+    @GetMapping("/topics/{topic}")
     public ResponseEntity<List<NotifierConfigurationResponse>> findByTopic(
             @Parameter(description = "Kafka topic name") @PathVariable("topic") String topic) {
         LOGGER.debug("Finding notifier configurations for topic: {}", topic);
@@ -120,7 +120,7 @@ public class NotifierConfigurationController {
             @ApiResponse(responseCode = "200", description = "Status toggled successfully"),
             @ApiResponse(responseCode = "404", description = "Configuration not found")
     })
-    @PatchMapping("/{id}/toggle")
+    @PatchMapping("/{id}/status")
     public ResponseEntity<NotifierConfigurationResponse> toggleEnabled(
             @Parameter(description = "Configuration ID") @PathVariable("id") String id) {
         LOGGER.info("Toggling enabled status for notifier configuration with ID: {}", id);

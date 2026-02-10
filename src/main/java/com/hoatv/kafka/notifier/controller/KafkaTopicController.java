@@ -48,7 +48,7 @@ public class KafkaTopicController {
 
     @Operation(summary = "Refresh all topic subscriptions")
     @ApiResponse(responseCode = "200", description = "Topic subscriptions refreshed successfully")
-    @PostMapping("/subscriptions/refresh")
+    @PostMapping("/subscriptions:sync")
     public ResponseEntity<Map<String, Object>> refreshSubscriptions() {
         LOGGER.info("Manual refresh of Kafka topic subscriptions requested");
 
