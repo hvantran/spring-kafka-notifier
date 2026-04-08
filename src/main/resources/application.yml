@@ -4,9 +4,6 @@ spring:
     import: 
       - classpath:kafka.properties
       - classpath:resilience4j.yml
-  autoconfigure:
-    exclude:
-      - io.github.resilience4j.springboot3.micrometer.autoconfigure.TimerAutoConfiguration
 
 # Application configuration  
   application:
