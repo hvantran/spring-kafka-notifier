@@ -14,7 +14,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedMethods("*")
-                        .allowedOrigins("http://localhost:3000", "http://actmanagerui.local:3000", "http://localhost:3001", "http://localhost:6084", "http://actmanagerui.local:6084", "http://localhost:8070")
+                        .allowedOrigins("http://localhost:3000", "http://localhost:3000", "http://localhost:3001", "http://localhost:6084", "http://localhost:6084", "http://localhost:8070")
                         .allowedHeaders("*");
             }
         };
